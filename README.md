@@ -210,15 +210,15 @@ A battery of robustness checks supports the principal findings against the major
 
 | Check | Substrate | Verdict |
 |-------|-----------|---------|
-| Power calibration | Welch noncentrality under empirical variances | Minimum detectable $|d| \approx 1.4$ at 80% power |
+| Power calibration | Welch noncentrality under empirical variances | Minimum detectable $\|d\| \approx 1.4$ at 80% power |
 | Half-width stratification | UKF posterior half-width filter | H1, H2, H3 directions stable or strengthen as threshold tightens |
 | Cross-atlas reproduction | Harvard-Oxford 110-ROI | All three hypotheses preserve direction and approximate magnitude |
 | Estimator comparison | UKF vs deterministic L-BFGS-B | Cohort-level and second-moment findings agree |
-| Session-order check | Sham-arm one-sample tests vs zero | No detectable rest1→rest2 drift in either Δ$a$ or Δσ$_a$ |
+| Session-order check | Sham-arm one-sample tests vs zero | No detectable rest1→rest2 drift in either $\Delta a$ or $\Delta \sigma_a$ |
 | Test-retest reliability | ICC(2,1) on sham arm | Subject-level statistics moderately reliable; per-region values lower (per-fit identifiability) |
 | Baseline characterization | Group × baseline interaction | Baseline predicts Δ (regression to the mean); interaction non-significant |
 | Demographic adjustment | Age + sex covariates | H2 and H3 contrasts preserved in direction and magnitude |
-| Circuit-size sensitivity | Eight circuit variants (8 → 77 ROIs) | Direction preserved; $|d|$ varies smoothly between 0.55 and 0.75 |
+| Circuit-size sensitivity | Eight circuit variants (8 → 77 ROIs) | Direction preserved; $\|d\|$ varies smoothly between 0.55 and 0.75 |
 
 ---
 
