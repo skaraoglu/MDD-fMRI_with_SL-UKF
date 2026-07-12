@@ -20,7 +20,7 @@
 
 ---
 
-*Can targeted neurofeedback reorganize the spatial distribution of the depressed brain's distance from criticality?*
+*Does targeted neurofeedback reorganize the spatial distribution of the depressed brain's distance from criticality?*
 
 </div>
 
@@ -28,11 +28,11 @@
 
 ## Overview
 
-This repository contains the full analysis pipeline for a double-blind, sham-controlled real-time fMRI neurofeedback trial in unmedicated Major Depressive Disorder. The central scientific question is whether MDD resting-state brain dynamics occupy a subcritical regime, and whether amygdala-targeted neurofeedback measurably reorganizes that regime.
+This repository contains the full analysis pipeline for a single-blind, sham-controlled real-time fMRI neurofeedback trial in unmedicated Major Depressive Disorder. The central scientific question is whether MDD resting-state brain dynamics occupy a subcritical regime, and whether amygdala-targeted neurofeedback reorganizes the *spatial distribution* of that regime across cortex.
 
-A **Stuart-Landau oscillator**, the canonical normal form of a supercritical Hopf bifurcation, is fitted to each region's BOLD time series via an **Unscented Kalman Filter**, yielding a per-region per-session bifurcation parameter $a$ that quantifies the distance from the critical boundary between noise-driven and self-sustaining oscillatory dynamics. The principal substrate of inference is not the cohort-level mean alone but the **spatial heterogeneity of $a$ across cortex**, captured by the across-region standard deviation $\sigma_a$ — a quantity that distinguishes uniform from focal perturbations of the cortical dynamical landscape and that mean-based statistics cannot register.
+A **Stuart-Landau oscillator**, the canonical normal form of a supercritical Hopf bifurcation, is fitted to each region's BOLD time series via an **Unscented Kalman Filter**, yielding a per-region per-session bifurcation parameter $a$ that quantifies the distance from the critical boundary between noise-driven and self-sustaining oscillatory dynamics. The principal target of inference is not the cohort-level mean alone but the **spatial heterogeneity of $a$ across cortex**, the across-region standard deviation $\sigma_a = \mathrm{SD}_{j}\{a_j\}$, a second-moment summary that distinguishes uniform from focal perturbations of the cortical dynamical landscape and that mean-based statistics cannot register.
 
-The framework draws conceptually on the cortical hierarchy literature (intrinsic neural timescales, regional E/I balance) and the broader Hopf-bifurcation modeling tradition for whole-brain dynamics. The empirical contribution is to demonstrate that the spatial distribution of the bifurcation parameter is sensitive to within-cohort therapeutic intervention at a sample size where the cohort-level mean alone is not.
+The work instantiates the evaluation side of a **structure-resolution** perspective: the cohort mean $\bar a$ and the spatial second moment $\sigma_a$ are *dissociable* observables, and an intervention effect that appears in the second moment is an informative object of analysis in its own right, to be reported (and its robustness validated) rather than dismissed when the mean-based contrast is null. The contribution is accordingly a **proposal and a proof-of-concept**: $\sigma_a$ is introduced as a candidate intervention-responsive quantity, and the neurofeedback contrast provides *directional, power-limited, estimator-dependent* evidence that it responds to a focal intervention at a sample size where the cohort mean is itself power-limited. The interpretation is framed as hypothesis-generating, not as a demonstrated clinical effect.
 
 ---
 
@@ -52,16 +52,17 @@ The framework draws conceptually on the cortical hierarchy literature (intrinsic
 **Neurofeedback Protocol**
 - Active: left amygdala upregulation
 - Sham: left intraparietal sulcus (control)
-- Double-blind, randomized assignment
+- Single-blind, randomized assignment
 - Resting-state fMRI as primary substrate (pre-NF and post-NF)
 
 </td>
 <td width="50%">
 
 **Acquisition**
-- Siemens 3T scanner
-- TR = 2.0 s; 260 volumes per session
-- AFNI preprocessing (motion, nuisance, bandpass 0.01–0.10 Hz)
+- GE Discovery MR750 3T scanner
+- TR = 2.0 s; TE = 30 ms; 260 volumes per session
+- Reconstructed voxels 1.875 × 1.875 × 3.4 mm
+- AFNI preprocessing (`afni_proc.py`, 17-regressor confounds, RETROICOR)
 - Input: AFNI `errts` residuals
 
 **Parcellation**
@@ -99,16 +100,17 @@ The framework draws conceptually on the cortical hierarchy literature (intrinsic
 │                               │                                          │
 │         ┌─────────────────────┼─────────────────────┐                    │
 │         ▼                     ▼                     ▼                    │
-│   ┌──────────┐         ┌─────────────┐      ┌──────────────────┐         │
-│   │  H1      │         │  H2         │      │  H3              │         │
-│   │  cohort  │         │  Δa group   │      │  Δσ_a group      │         │
-│   │  subcrit │         │  contrast   │      │  contrast        │         │
-│   └──────────┘         └─────────────┘      └──────────────────┘         │
+│   ┌──────────────┐    ┌──────────────────┐   ┌─────────────┐             │
+│   │  Baseline    │    │  H1 (principal)  │   │  H2         │             │
+│   │  cohort      │    │  Δσ_a group      │   │  Δa group   │             │
+│   │  subcrit     │    │  reorganization  │   │  contrast   │             │
+│   └──────────────┘    └──────────────────┘   └─────────────┘             │
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐     │
 │  │  Sensitivity battery: power · half-width stratification ·       │     │
 │  │  cross-atlas · estimator · session-order · ICC · baseline       │     │
-│  │  characterization · demographic adjustment · circuit-size       │     │
+│  │  characterization · demographic adjustment · circuit-size ·     │     │
+│  │  permutation · bootstrap · leave-one-subject-out · spec-curve   │     │
 │  └─────────────────────────────────────────────────────────────────┘     │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -141,83 +143,90 @@ When $a < 0$, perturbations from the fixed point at the origin decay exponential
 |-----------|---------|--------|
 | $a$ | Distance from critical point | Estimated by UKF (Stage 1) |
 | $\omega$ | Natural oscillation frequency | Pre-fitted via Hilbert phase derivative |
-| $\sigma_a$ | Across-region SD of *a* per subject | Statistical Analysis (H3) |
+| $\sigma_a$ | Across-region SD of *a* per subject | Principal statistic (H1) |
 | $K$ | Inter-regional coupling | Tested → not identifiable at TR = 2 s |
 
-The decision to fix $\omega$ before fitting $a$ avoids the joint identifiability problem that arises when both parameters are inferred from a single short BOLD recording. The decision to anchor substantive claims to cohort-level statistics, circuit-level patterns, and the second-moment statistic $\sigma_a$ deliberately sidesteps the per-fit identifiability constraints documented in the supplementary materials.
+The decision to fix $\omega$ before fitting $a$ avoids the joint identifiability problem that arises when both parameters are inferred from a single short BOLD recording. Substantive claims are deliberately anchored to quantities that do not require per-fit accuracy, the cohort-level mean, the within-subject group contrast on $\Delta a$, and the second-moment statistic $\sigma_a$, sidestepping the per-fit identifiability constraints documented in the supplementary materials.
 
 ---
 
-## Pre-Specified Hypotheses
+## Hypotheses
+
+The principal hypothesis concerns the **spatial reorganization** of regional dynamics; the mean-shift hypothesis is secondary; cohort subcriticality is a baseline characterization that validates the framework rather than a test of the intervention.
 
 | | Hypothesis | Test |
 |---|------------|------|
-| **H1** | The MDD cohort sits in the subcritical regime: cohort-mean $a < 0$ | One-sample $t$-test on subject-level mean (38 observations from 19 subjects × 2 sessions) |
+| **Baseline** | The MDD cohort sits in the subcritical regime: cohort-mean $a < 0$ | One-sample $t$-test on subject-level mean (38 observations from 19 subjects × 2 sessions) |
+| **H1** *(principal)* | Active rtfMRI-NF reorganizes the spatial distribution of regional bifurcation states relative to sham (change in $\sigma_a$) | Welch's $t$-test on per-subject $\Delta \sigma_a$ |
 | **H2** | Active rtfMRI-NF produces a directional shift in mean $a$ relative to sham, both whole-brain and within a depression-relevant circuit | Welch's $t$-test on per-subject $\Delta a$ |
-| **H3** | Active rtfMRI-NF produces a reorganization of the spatial distribution of regional bifurcation states relative to sham | Welch's $t$-test on per-subject $\Delta \sigma_a$ |
 
-Inferential controls applied to all three families: Cohen's $d$ effect sizes with pooled SD, Mann-Whitney $U$ as non-parametric confirmation, BCa bootstrap 95% CIs (10,000 resamples), Benjamini-Hochberg FDR across hypothesis families.
+Inferential controls applied to the intervention contrasts: Cohen's $d$ effect sizes with pooled SD, Mann-Whitney $U$ as non-parametric confirmation, BCa bootstrap 95% CIs (10,000 resamples), enumerated permutation tests, leave-one-subject-out refitting, and a specification-curve analysis over defensible analytic choices.
 
 ---
 
 ## Principal Findings
 
-**Cohort-level subcriticality (H1)** is robust and replicates on the cross-validation atlas:
+**Baseline subcriticality (framework validation)** is robust and replicates on the cross-validation atlas. The cohort sits deep in the subcritical regime, with only one of approximately 8,200 per-fit estimates falling supercritical:
 
 ```
-H1: cohort subcriticality (216-ROI)        t(37) = -56.13     p < 0.001     CONFIRMED
-H1: cohort subcriticality (HOA-110)        t(37) = -56.29     p < 0.001     REPLICATED
+Baseline: cohort mean a = -0.288 (216-ROI)   t(37) = -56.13   p < 0.001   CONFIRMED
+Baseline: cohort mean a = -0.292 (HOA-110)   t(37) = -56.29   p < 0.001   REPLICATED
 ```
 
-**Directional H2 contrast** is consistent across the whole-brain and circuit-restricted analyses, with both contrasts pointing toward deeper subcriticality in the active arm relative to sham. Both fall below the design's minimum detectable effect at conventional 80% power and are interpreted as power-limited rather than evidentially decisive:
+**Spatial reorganization (H1, principal)** shows a large-effect, directionally stable expansion of $\sigma_a$ in the active arm against a contracting sham arm, but it does **not** clear exact inference and does **not** reproduce under the alternative estimator. It is reported as a *directional, power-limited, estimator-dependent* signal, a proposal for adequately powered replication rather than an established effect:
+
+```
+H1: Δσ_a    d = +0.96   95% CI [-0.02, +1.89]   parametric p = 0.050   DIRECTIONAL / POWER-LIMITED
+            permutation p = 0.054 · BCa CI includes zero · Bayes factor ≈ 1.6
+            deterministic-objective estimator: d ≈ +0.05 (baseline retention)
+```
+
+**Directional mean shift (H2)** is consistent across the whole-brain and circuit-restricted analyses, both pointing toward deeper subcriticality in the active arm. Both fall below the design's minimum detectable effect at conventional 80% power and are interpreted as power-limited rather than evidentially decisive:
 
 ```
 H2: whole-brain Δa           d = -0.84    p = 0.080     directional, power-limited
 H2: circuit-restricted Δa    d = -0.66    p = 0.157     directional, not significant
 ```
 
-**Spatial reorganization (H3)** reaches conventional significance and is the centerpiece finding of the analysis:
+Active-group regions diverge in their dynamical operating points across cortex while sham-group regions converge. This **bidirectional** pattern (active expansion, sham contraction) is not consistent with nonspecific session effects shared between the two arms, and it is a pattern the cohort-level mean cannot register because it averages over the spatial structure that $\sigma_a$ summarizes.
 
-```
-H3: Δσ_a                     d = +0.96    p = 0.050     SIGNIFICANT
-```
-
-Active-group regions diverge in their dynamical operating points across cortex while sham-group regions converge — a pattern that the cohort-level mean is unable to register because it averages over the spatial structure that $\sigma_a$ summarizes.
+> **The single robust positive statement the sample supports** is the *stability of the direction of effect* across estimators, atlases, and analytic specifications. This is what motivates $\sigma_a$ as a candidate quantity for adequately powered replication, not as a finished result.
 
 ---
 
 ## Methodological Highlights
 
-**Spatial heterogeneity statistic.** The across-region standard deviation $\sigma_a$ is introduced as a second-moment summary of the per-region bifurcation parameter distribution. Theoretical motivation: a uniform perturbation of all regions shifts the cohort mean but leaves $\sigma_a$ approximately unchanged; a focal perturbation that engages a circumscribed circuit expands $\sigma_a$ even when the resulting shift in cohort mean is modest. The two regimes are dissociable through $\sigma_a$ but not through $\bar{a}$ alone.
+**Spatial heterogeneity statistic.** The across-region standard deviation $\sigma_a$ is introduced as a second-moment summary of the per-region bifurcation-parameter distribution. Theoretical motivation: a uniform perturbation of all regions shifts the cohort mean but leaves $\sigma_a$ approximately unchanged; a focal perturbation that engages a circumscribed circuit expands $\sigma_a$ even when the resulting shift in cohort mean is modest. The two regimes are dissociable through $\sigma_a$ but not through $\bar{a}$ alone, which is the evaluation content of the structure-resolution position: an effect that lives in the second moment is reportable in its own right, subject to validation.
 
 **Stuart-Landau UKF.** RK4-integrated sigma-point Kalman filter for joint state-parameter estimation from the BOLD analytic signal, with $\omega$ pre-fitted via a trimmed-median Hilbert phase-derivative procedure. The fixed-$\omega$ variant resolves the $a$–$\omega$ identifiability trade-off that arises when both parameters are estimated jointly from short recordings.
 
-**Dual-atlas validation.** Every subject-level result is independently replicated on a second atlas (216-ROI Schaefer-Melbourne primary; 110-ROI Harvard-Oxford sphere-based validation) with no shared ROIs and independent processing pipelines. Cross-atlas correlation $r = 0.881$ on per-subject $\Delta a$.
+**Dual-atlas validation.** Every subject-level result is independently replicated on a second atlas (216-ROI Schaefer-Melbourne primary; 110-ROI Harvard-Oxford sphere-based validation) with no shared ROIs and independent processing pipelines. Cross-atlas correlation $r = 0.881$ on per-subject cohort-mean. Agreement is driven by cortical parcels; the subcortical-only matched-structure correlation is near zero, so subcortical network-level patterns are read as single-atlas.
 
-**Dual-estimator robustness.** A complementary deterministic-objective estimator using multi-start L-BFGS-B optimization of the chi-square surface with a per-fit observability metric is applied to the same data. Cohort-level mean direction and magnitude agree closely; per-fit estimates diverge substantially, with Pearson correlation near zero between per-region per-session estimates from the two pipelines. The substantive findings of the present analysis rest on cohort-level and second-moment statistics that are preserved across the two estimation frameworks.
+**Dual-estimator robustness (and its limits).** A complementary deterministic-objective estimator (multi-start L-BFGS-B on the chi-square surface, with a per-fit observability metric) is applied to the same data. The two estimators agree on cohort-level *direction* but not on per-region point estimates, with the per-fit correlation near zero. Consequently the $\sigma_a$ effect is **estimator-dependent in magnitude**: large under the UKF, but small under the deterministic estimator at baseline retention ($d \approx +0.05$), emerging only under stricter observability filtering. Only the *direction* of effect is stable across frameworks. The substantive interpretation therefore rests on the UKF analysis and on quantities that do not require per-fit accuracy.
 
-**Power calibration upfront.** A sensitivity power analysis was conducted before the H2 analysis was performed. Under the empirical group variances and sample sizes, the minimum detectable effect at 80% power is $|d| \approx 1.4$, and the H2 contrast is interpreted throughout under this power-bounded reading.
+**Power calibration upfront.** A sensitivity power analysis was conducted before the intervention contrasts were performed. Under the empirical group variances and sample sizes, the minimum detectable effect at 80% power is $|d| \approx 1.4$, and both intervention contrasts are interpreted throughout under this power-bounded reading.
 
-**A priori depression-circuit mask.** The 69-ROI depression circuit used in the circuit-restricted H2 analysis is constructed in this work as a literature-based mask on the Schaefer-Melbourne atlas — a fixed list of subcortical parcels and a fixed set of substring patterns matched against Schaefer parcel names, applied identically to all subjects before any group-level analysis is conducted. The mask is intended to be carried forward as a reusable definition in subsequent analyses on related cohorts.
+**A priori depression-circuit mask.** The 69-ROI depression circuit used in the circuit-restricted H2 analysis is constructed in this work as a literature-based mask on the Schaefer-Melbourne atlas, a fixed list of subcortical parcels and a fixed set of substring patterns matched against Schaefer parcel names, applied identically to all subjects before any group-level analysis. The mask is intended to be carried forward as a reusable definition in subsequent analyses on related cohorts.
 
-**Linearization coherence.** In the deeply subcritical regime confirmed by H1, the Stuart-Landau cubic term vanishes and the model reduces to multivariate Ornstein-Uhlenbeck. The mOU framework is therefore not an independent model choice but the linearization of the SL dynamics under the empirical regime characterized by Stage 1.
+**Linearization coherence.** In the deeply subcritical regime confirmed at baseline, the Stuart-Landau cubic term vanishes and the model reduces to multivariate Ornstein-Uhlenbeck. The mOU framework is therefore not an independent model choice but the linearization of the SL dynamics under the empirical regime characterized by Stage 1.
 
 ---
 
 ## Sensitivity Analyses
 
-A battery of robustness checks supports the principal findings against the major threats to inference at the present sample size.
+A battery of robustness checks supports the *direction* of the principal findings against the major threats to inference at the present sample size, and documents where magnitude is not supported.
 
 | Check | Substrate | Verdict |
 |-------|-----------|---------|
 | Power calibration | Welch noncentrality under empirical variances | Minimum detectable $\|d\| \approx 1.4$ at 80% power |
-| Half-width stratification | UKF posterior half-width filter | H1, H2, H3 directions stable or strengthen as threshold tightens |
-| Cross-atlas reproduction | Harvard-Oxford 110-ROI | All three hypotheses preserve direction and approximate magnitude |
-| Estimator comparison | UKF vs deterministic L-BFGS-B | Cohort-level and second-moment findings agree |
+| Half-width stratification | UKF posterior half-width filter | H1, H2 directions stable or strengthen as threshold tightens |
+| Cross-atlas reproduction | Harvard-Oxford 110-ROI | Directions and approximate magnitudes preserved (cortex-driven) |
+| Estimator comparison | UKF vs deterministic L-BFGS-B | Direction agrees; $\sigma_a$ magnitude estimator-dependent (large UKF, ≈0.05 deterministic) |
+| Exact inference (H1) | Permutation · BCa bootstrap · LOSO · Bayes · spec-curve | $p = 0.054$; CI on $d$ includes zero; significance in a minority of specifications; direction stable |
 | Session-order check | Sham-arm one-sample tests vs zero | No detectable rest1→rest2 drift in either $\Delta a$ or $\Delta \sigma_a$ |
-| Test-retest reliability | ICC(2,1) on sham arm | Subject-level statistics moderately reliable; per-region values lower (per-fit identifiability) |
+| Test-retest reliability | ICC(2,1) on sham arm | Subject-level statistics moderately reliable; per-region values lower |
 | Baseline characterization | Group × baseline interaction | Baseline predicts Δ (regression to the mean); interaction non-significant |
-| Demographic adjustment | Age + sex covariates | H2 and H3 contrasts preserved in direction and magnitude |
+| Demographic adjustment | Age + sex covariates | H1 and H2 contrasts preserved in direction and magnitude |
 | Circuit-size sensitivity | Eight circuit variants (8 → 77 ROIs) | Direction preserved; $\|d\|$ varies smoothly between 0.55 and 0.75 |
 
 ---
