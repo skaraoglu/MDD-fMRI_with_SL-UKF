@@ -306,6 +306,7 @@ If you use this pipeline or build on this work, please cite the accompanying man
 - Zotev, V. et al. (2016). Correlation between amygdala BOLD activity and frontal EEG asymmetry during real-time fMRI neurofeedback training in patients with depression. *NeuroImage: Clinical*, 11, 224–238.
 - Young, K. D. et al. (2014). Real-time fMRI neurofeedback training of amygdala activity in patients with major depressive disorder. *PLOS ONE*, 9(2), e88785.
 - Young, K. D. et al. (2017). Randomized clinical trial of real-time fMRI amygdala neurofeedback for major depressive disorder. *American Journal of Psychiatry*, 174(8), 748–755.
+- M. Misaki, K. D. Young, A. Tsuchiyagaito, J. Savitz, S. M. Guinjoan, Clinical response to neurofeedback in major depression relates to subtypes of whole-brain activation patterns during training, Molecular Psychiatry, 2025, Volume 30, Issue 6, pp. 2707-2717. DOI: 10.1038/s41380-024-02880-3.
 
 ---
 
